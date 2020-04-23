@@ -107,9 +107,6 @@ void EXTI1_IRQHandler(void) {
             if (cur_byte == 0xf0) {
                 is_break_mode = 1;
             }
-            if(resend){
-                GPIOA->ODR |= (1 << 0);
-            }
 
             if (resend || cur_byte == 0xfe || (is_break_mode == 0 && scancode_is_in_dictionary(dictionary, cur_byte))) {
                 send_mode = 1;

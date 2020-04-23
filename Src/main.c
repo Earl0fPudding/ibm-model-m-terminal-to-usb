@@ -143,7 +143,7 @@ int main(void) {
     GPIOA->ODR &= ~(1 << 1);
 
 
-    GPIOA->MODER &= ~(0b11 << 0 * 2); // beeper init
+    GPIOA->MODER &= ~(0b11 << 0 * 2); // debug beeper init
     GPIOA->MODER |= (0b01 << 0 * 2);
     GPIOA->PUPDR &= ~((0b11 << 0 * 2));
     GPIOA->ODR &= ~(1 << 0);
