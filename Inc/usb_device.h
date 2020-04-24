@@ -76,7 +76,7 @@
   */
 
 /** USB Device initialization function. */
-void MX_USB_DEVICE_Init(void);
+void MX_USB_DEVICE_Init(uint8_t map_mode);
 
 /*
  * -- Insert functions declaration here --

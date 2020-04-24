@@ -20,9 +20,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "usbd_hid.h"
 #include "usb_device.h"
 #include "dictionary.c"
-#include "usbd_hid.h"
 
 Dictionary dictionary; // volatile?
 
@@ -148,7 +148,7 @@ int main(void) {
     GPIOA->PUPDR &= ~((0b11 << 0 * 2));
     GPIOA->ODR &= ~(1 << 0);
 
-    MX_USB_DEVICE_Init();
+    MX_USB_DEVICE_Init(0);
 
 
 

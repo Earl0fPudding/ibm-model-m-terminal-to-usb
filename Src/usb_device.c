@@ -25,6 +25,10 @@
 #include "usbd_core.h"
 #include "usbd_desc.h"
 #include "usbd_hid.h"
+#include "usbd_cdc.h"
+#include "usbd_cdc_if.h"
+
+extern USBD_ClassTypeDef  USBD_HID;
 
 /* USER CODE BEGIN Includes */
 
@@ -62,28 +66,37 @@ extern USBD_DescriptorsTypeDef FS_Desc;
   * Init USB device Library, add supported class and start the library
   * @retval None
   */
-void MX_USB_DEVICE_Init(void)
-{
-  /* USER CODE BEGIN USB_DEVICE_Init_PreTreatment */
-  
-  /* USER CODE END USB_DEVICE_Init_PreTreatment */
-  
-  /* Init Device Library, add supported class and start the library. */
-  if (USBD_Init(&hUsbDeviceFS, &FS_Desc, DEVICE_FS) != USBD_OK)
-  {
-    Error_Handler();
-  }
-  if (USBD_RegisterClass(&hUsbDeviceFS, &USBD_HID) != USBD_OK)
-  {
-    Error_Handler();
-  }
-  if (USBD_Start(&hUsbDeviceFS) != USBD_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USB_DEVICE_Init_PostTreatment */
-  
-  /* USER CODE END USB_DEVICE_Init_PostTreatment */
+void MX_USB_DEVICE_Init(uint8_t map_mode) {
+    /* USER CODE BEGIN USB_DEVICE_Init_PreTreatment */
+
+    /* USER CODE END USB_DEVICE_Init_PreTreatment */
+
+    /* Init Device Library, add supported class and start the library. */
+    if (USBD_Init(&hUsbDeviceFS, &FS_Desc, DEVICE_FS) != USBD_OK) {
+        Error_Handler();
+    }
+    if ((map_mode==1 && USBD_RegisterClass(&hUsbDeviceFS, &USBD_CDC) != USBD_OK) ||  (map_mode == 0 && USBD_RegisterClass(&hUsbDeviceFS, &USBD_HID) != USBD_OK))
+    {
+        Error_Handler();
+    }
+    if (map_mode==1 && USBD_CDC_RegisterInterface(&hUsbDeviceFS, &USBD_Interface_fops_FS) != USBD_OK) {
+        Error_Handler();
+    }
+    if (USBD_Start(&hUsbDeviceFS) != USBD_OK) {
+        Error_Handler();
+    }
+    /* USER CODE BEGIN USB_DEVICE_Init_PostTreatment */
+
+    /* USER CODE END USB_DEVICE_Init_PostTreatment */
+}
+
+void MX_USB_DEVICE_DeInit(uint8_t map_mode){
+    if (USBD_Stop(&hUsbDeviceFS) != USBD_OK) {
+        Error_Handler();
+    }
+    if (USBD_DeInit(&hUsbDeviceFS) != USBD_OK) {
+        Error_Handler();
+    }
 }
 
 /**
