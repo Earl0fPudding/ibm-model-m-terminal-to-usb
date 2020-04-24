@@ -74,6 +74,14 @@ static void MX_GPIO_Init(void);
 /* USER CODE END 0 */
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
+static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len) {
+    /* USER CODE BEGIN 6 */
+    USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
+    USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+    return (USBD_OK);
+    /* USER CODE END 6 */
+}
+
 static uint8_t cur_keymodifier;
 
 void add_modifier_key(uint8_t hidcode) {
@@ -182,95 +190,119 @@ int main(void) {
     uint8_t cur_report_index;
 
 
-
     uint16_t cur_x = 0;
     uint8_t next_key_remove = 0;
     uint32_t prev_tick = HAL_GetTick();
 
 
+    char received_buffer[1];
+    received_buffer[0] = '\0';
+    uint32_t received_length = 0;
+    uint8_t map_mode = 0;
 
     wait_ms(2000);
 
     enableInterrupts();
 
     while (1) {
-        if (HAL_GetTick() - prev_tick > 1500) {
-            lcd_gotoxy(0, 0);
-            lcd_puts("                ");
-            cur_x = 0;
-            prev_tick = HAL_GetTick();
-        }
+        if (map_mode == 1) {
+            CDC_Receive_FS(&received_buffer, &received_length);
+            if (received_buffer[0] != '\0') {
+                if (received_buffer[0] == 'p') {
+                    MX_USB_DEVICE_DeInit(1);
+                    MX_USB_DEVICE_Init(0);
+
+                    map_mode = 0;
+                    continue;
+                }
+                CDC_Transmit_FS(received_buffer, sizeof(received_buffer));
+                received_buffer[0] = '\0';
+            }
+
+        } else {
+            if (HAL_GetTick() - prev_tick > 1500) {
+                lcd_gotoxy(0, 0);
+                lcd_puts("                ");
+                cur_x = 0;
+                prev_tick = HAL_GetTick();
+            }
 
 
-        memset(press_report, 0, sizeof(press_report));
-        cur_report_index = 2;
+            memset(press_report, 0, sizeof(press_report));
+            cur_report_index = 2;
 
-        press_report[0] = 1; // normal key mode
-        press_report[1] = cur_keymodifier;
+            press_report[0] = 1; // normal key mode
+            press_report[1] = cur_keymodifier;
 
-       // scancode = get_scan_code();
-       scancode=pop_first_from_list(&scancode_list);
-        if (scancode != 0) {
-            // press_report[cur_report_index] = get_hidcode(dictionary, scancode);
+            // scancode = get_scan_code();
+            scancode = pop_first_from_list(&scancode_list);
+            if (scancode != 0) {
+                // press_report[cur_report_index] = get_hidcode(dictionary, scancode);
 /*            GPIOA->ODR|=1<<0;
             HAL_Delay(20);
             GPIOA->ODR&=~(1<<0);*/
-            if (scancode == 0x5f) {
-                GPIOA->ODR &= ~(1 << 0);
-            }
-
-            if (is_modkey(scancode)) {
-                if (next_key_remove == 1) {
-                    remove_modifier_key(get_hidcode(dictionary, scancode));
-                    next_key_remove = 0;
-                } else {
-                    add_modifier_key(get_hidcode(dictionary, scancode));
+                if (scancode == 0x5f) {
+                    GPIOA->ODR &= ~(1 << 0);
                 }
-            } else if (scancode == 0xf0) {
-                next_key_remove = 1;
-            } else {
-                if (next_key_remove == 1) {
-                    remove_from_list(&hid_list, get_hidcode(dictionary, scancode));
-                    next_key_remove = 0;
+
+                if (is_modkey(scancode)) {
+                    if (next_key_remove == 1) {
+                        remove_modifier_key(get_hidcode(dictionary, scancode));
+                        next_key_remove = 0;
+                    } else {
+                        add_modifier_key(get_hidcode(dictionary, scancode));
+                    }
+                } else if (scancode == 0xf0) {
+                    next_key_remove = 1;
                 } else {
-                    add_to_list(&hid_list, get_hidcode(dictionary, scancode));
+                    if (next_key_remove == 1) {
+                        remove_from_list(&hid_list, get_hidcode(dictionary, scancode));
+                        next_key_remove = 0;
+                    } else {
+                        add_to_list(&hid_list, get_hidcode(dictionary, scancode));
+                    }
                 }
+
+                /*  lcd_clrscr();
+                  sprintf(buff, "%x ", scancode);
+                  lcd_puts(buff);*/
+
+                sprintf(buff, "%x ", scancode);
+                lcd_gotoxy(cur_x, 0);
+                lcd_puts(buff);
+                lcd_gotoxy(0, 1);
+                sprintf(buff, "%x ", cur_byte);
+                lcd_puts(buff);
+                sprintf(buff, "%d ", cur_bit);
+                lcd_puts(buff);
+                cur_x += 3;
+
+
+                scancode = 0;
+
+
             }
+            if (is_in_list(hid_list, 42) && cur_keymodifier == 0x22) {
+                MX_USB_DEVICE_DeInit(0);
+                MX_USB_DEVICE_Init(1);
+                map_mode = 1;
+                continue;
+            }
+            for (uint8_t i = 0; i < hid_list.amount; ++i) {
+                press_report[cur_report_index] = hid_list.items[i];
+                cur_report_index++;
 
-            /*  lcd_clrscr();
-              sprintf(buff, "%x ", scancode);
-              lcd_puts(buff);*/
+            }
+            USBD_HID_SendReport(&hUsbDeviceFS, press_report, PRESS_REPORT_SIZE);
+            /* uint8_t press_report2[PRESS_REPORT_SIZE] = {0};
+             press_report2[0] = 1;
+             press_report2[1] = cur_keymodifier;
+             USBD_HID_SendReport(&hUsbDeviceFS, press_report2, 5);*/
 
-            sprintf(buff, "%x ", scancode);
-            lcd_gotoxy(cur_x, 0);
-            lcd_puts(buff);
-            lcd_gotoxy(0, 1);
-            sprintf(buff, "%x ", cur_byte);
-            lcd_puts(buff);
-            sprintf(buff, "%d ", cur_bit);
-            lcd_puts(buff);
-            cur_x += 3;
-
-
-            scancode = 0;
+            HAL_Delay(1);
 
 
         }
-        for (uint8_t i = 0; i < hid_list.amount; ++i) {
-            press_report[cur_report_index] = hid_list.items[i];
-            cur_report_index++;
-
-        }
-        USBD_HID_SendReport(&hUsbDeviceFS, press_report, PRESS_REPORT_SIZE);
-       /* uint8_t press_report2[PRESS_REPORT_SIZE] = {0};
-        press_report2[0] = 1;
-        press_report2[1] = cur_keymodifier;
-        USBD_HID_SendReport(&hUsbDeviceFS, press_report2, 5);*/
-
-        HAL_Delay(1);
-
-
-
         /* USER CODE BEGIN 3 */
     }
     /* USER CODE END 3 */

@@ -48,3 +48,12 @@ uint8_t pop_first_from_list(List *list){
     remove_from_list(list, tmp);
     return tmp;
 }
+
+uint8_t is_in_list(List list, uint8_t item){
+    for (uint8_t i = 0; i < list.amount; ++i) {
+        if (list.items[i] == item) {
+            return 1;
+        }
+    }
+    return 0;
+}
