@@ -3,13 +3,16 @@ An easy mappable adapter for the IBM Model M terminal version so it can be used 
 
 # Features
 - an easy plug and play solution for an IBM Mode M keyboard which has a RJ45 or 8P8C connector
-- all keys are mappable (todo)
-- performing a certain key combination on the keyboard sets the microcontroller into map mode (todo)
-- during map mode the user can log onto the microcontroller via virtual serial terminal and customize the mapping to their desire which will be saved to flash memory (todo)
+- all keys are mappable
+- supports up to 50 different mapping configurations (todo)
+- performing a certain key combination switches between configurations (todo)
+- performing a certain key combination sets the microcontroller into map mode
+- during map mode the user can log onto the microcontroller via virtual serial terminal and customize the mapping to their desire which will be saved to an eeprom memory chip (todo)
 
 # Requirements
 ## Hardware requirements
  - STM32L452 microcontroller
+ - 24LC256-I/SN eeprom
  - RJ45 also known as 8P8C connector
  - A USB connector
  - One 10 Ohm and one 22 Ohm Resistor
