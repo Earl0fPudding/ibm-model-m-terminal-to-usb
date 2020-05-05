@@ -136,19 +136,6 @@ int main(void) {
 
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
-    GPIOC->MODER &= ~(0b11 << 2 * 2); // c2 clock transistor init
-    GPIOC->MODER |= (0b01 << 2 * 2);
-    GPIOC->PUPDR &= ~((0b11 << 2 * 2));
-    //GPIOC->OSPEEDR |= ((0b11 << 2 * 2));
-
-
-    GPIOA->MODER &= ~(0b11 << 1 * 2); // a1 data transistor init
-    GPIOA->MODER |= (0b01 << 1 * 2);
-    GPIOA->PUPDR &= ~((0b11 << 1 * 2));
-    //GPIOA->OSPEEDR |= ((0b11 << 1 * 2));
-
-    GPIOC->ODR &= ~(1 << 2);
-    GPIOA->ODR &= ~(1 << 1);
 
 
     GPIOA->MODER &= ~(0b11 << 0 * 2); // debug beeper init
@@ -208,14 +195,20 @@ int main(void) {
         if (map_mode == 1) {
             CDC_Receive_FS(&received_buffer, &received_length);
             if (received_buffer[0] != '\0') {
+                if (received_buffer[0] == 'f') {
+
+                }
                 if (received_buffer[0] == 'p') {
+//                    GPIOA->ODR |= (1 << 0);
+
+
                     MX_USB_DEVICE_DeInit(1);
                     MX_USB_DEVICE_Init(0);
 
                     map_mode = 0;
                     continue;
                 }
-                CDC_Transmit_FS(received_buffer, sizeof(received_buffer));
+//                CDC_Transmit_FS(received_buffer, sizeof(received_buffer));
                 received_buffer[0] = '\0';
             }
 
