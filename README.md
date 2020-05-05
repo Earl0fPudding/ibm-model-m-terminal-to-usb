@@ -16,7 +16,6 @@ An easy mappable adapter for the IBM Model M terminal version so it can be used 
  - RJ45 also known as 8P8C connector
  - A USB connector
  - One 10 Ohm and one 22 Ohm Resistor
- - Two BJT transistors
  - A ST LINK for flashing the microcontroller
  
  ## Software requirements
