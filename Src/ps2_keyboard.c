@@ -27,21 +27,22 @@ void EXTI1_IRQHandler(void) {
 
         }
         if (cur_bit > 0 && cur_bit < 9) {
-            if ((send_message & (1 << (cur_bit - 1))) != 0 && (GPIOA->ODR & (1 << 1)) != 0) {
-                GPIOA->ODR &= ~(1 << 1);
-            } else if ((send_message & (1 << (cur_bit - 1))) == 0 && (GPIOA->ODR & (1 << 1)) == 0) {
-                GPIOA->ODR |= (1 << 1);
+            if ((send_message & (1 << (cur_bit - 1))) != 0 && (GPIOC->ODR & (1 << 3)) == 0) {
+                GPIOC->ODR |= (1 << 3);
+            } else if ((send_message & (1 << (cur_bit - 1))) == 0 && (GPIOC->ODR & (1 << 3)) != 0) {
+                GPIOC->ODR &= ~(1 << 3);
             }
         }
         if (cur_bit == 9) {
-            if (generate_odd_parity_bit(send_message) != 0 && (GPIOA->ODR & (1 << 1)) != 0) {
-                GPIOA->ODR &= ~(1 << 1);
-            } else if (generate_odd_parity_bit(send_message) == 0 && (GPIOA->ODR & (1 << 1)) == 0) {
-                GPIOA->ODR |= (1 << 1);
+            if (generate_odd_parity_bit(send_message) != 0 && (GPIOC->ODR & (1 << 3)) == 0) {
+                GPIOC->ODR|= (1 << 3);
+            } else if (generate_odd_parity_bit(send_message) == 0 && (GPIOC->ODR & (1 << 3)) != 0) {
+                GPIOC->ODR &= ~(1 << 3);
             }
         }
         if (cur_bit == 10) {
-            GPIOA->ODR &= ~(1 << 1);
+            GPIOC->ODR |= (1 << 3);
+            GPIOC->MODER &= ~(0b11 << 3 * 2); // set pc3 as input pin
         }
         if (cur_bit == 11) {
             if ((GPIOC->IDR & (1 << 3)) == 0) {
@@ -50,16 +51,21 @@ void EXTI1_IRQHandler(void) {
                 return;
             } else{
                 disableInterrupts();
-                GPIOC->ODR |= (1 << 2);
+                GPIOC->MODER |= (0b01 << 1 * 2); // set pc1 as output pin
+                GPIOA->ODR &= ~(1 << 1);
+
                 for (uint8_t i = 0; i < 255; ++i) {
                     __NOP();
                 }
-                GPIOA->ODR |= (1 << 1);
+
+                GPIOC->MODER |= (0b01 << 3 * 2); // set pc3 as output pin
+                GPIOA->ODR &= ~(1 << 3);
+
                 for (uint8_t i = 0; i < 255; ++i) {
                     __NOP();
                 }
                 enableInterrupts();
-                GPIOC->ODR &= ~(1 << 2);
+                GPIOC->MODER &= ~(0b11 << 1 * 2); // set pc1 as input pin
 
                 send_mode = 1;
                 cur_bit = 0;
@@ -120,16 +126,23 @@ void EXTI1_IRQHandler(void) {
                     send_message = 0xFE;
                 }
 
-                GPIOC->ODR |= (1 << 2);
+
+                GPIOC->MODER |= (0b01 << 1 * 2); // set pc1 as output pin
+                GPIOA->ODR &= ~(1 << 1);
+
                 for (uint8_t i = 0; i < 255; ++i) {
                     __NOP();
                 }
-                GPIOA->ODR |= (1 << 1);
+
+                GPIOC->MODER |= (0b01 << 3 * 2); // set pc3 as output pin
+                GPIOA->ODR &= ~(1 << 3);
+
                 for (uint8_t i = 0; i < 255; ++i) {
                     __NOP();
                 }
                 enableInterrupts();
-                GPIOC->ODR &= ~(1 << 2);
+                GPIOC->MODER &= ~(0b11 << 1 * 2); // set pc1 as input pin
+
                 // lcd_puts("lol");
 
             }
@@ -149,6 +162,8 @@ void ps2_begin() {
     GPIOC->MODER &= ~(0b11 << 3 * 2); // set pc3 as input pin
     GPIOC->PUPDR &= ~((0b11 << 3 * 2)); // set pc3 to no pull up or pull down
     GPIOC->PUPDR |= ((0b01 << 3 * 2)); // set pc3 to pull up
+    GPIOC->OTYPER |= (1 << 3);
+
     //   GPIOC->ODR |= 0b1 << 3; // set pc0 high
 
     initEXTI1();

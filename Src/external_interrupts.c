@@ -12,6 +12,7 @@ void initEXTI1(void){
     GPIOC->MODER &= ~(0b11 << 1 * 2); // set pc0 as input pin
     GPIOC->PUPDR &= ~((0b11 << 1 * 2)); // set pc0 to no pull up or pull down
     GPIOC->PUPDR |= ((0b01 << 1 * 2)); // set pc1 to no pull up or pull down
+    GPIOC->OTYPER |= (1 << 1);
 
    // GPIOC->ODR |= 0b1 << 1; // set pc0 high
 
